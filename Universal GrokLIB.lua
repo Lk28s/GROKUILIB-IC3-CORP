@@ -1,3 +1,7 @@
+-- GrokUILib: Biblioteca UI completa para Roblox by Ic3 Corp
+-- Versão 1.4 (Outubro 2025) - By Grok (xAI)
+-- Licença: Livre para uso
+
 local GrokUILib = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -112,8 +116,7 @@ local function createSlider(parent, text, min, max, default, callback)
 end
 
 local function createNotification(screenGui, title, description, duration, colors)
-    local notifSize = description and UDim2.new(0, 250, 0, 80) or UDim2.new(0, 250, 0, 50)
-    local notifFrame = createFrame(screenGui, notifSize, UDim2.new(1, 10, 1, -90), colors and colors.Background or Color3.fromRGB(30, 30, 30), 8)
+    local notifFrame = createFrame(screenGui, UDim2.new(0, 200, 0, description and 80 or 50), UDim2.new(1, 0, 1, -90), colors and colors.Background or Color3.fromRGB(30, 30, 30), 8)
     
     createLabel(notifFrame, title, UDim2.new(1, -10, 0, 20), UDim2.new(0, 5, 0, 5), colors and colors.Title or Color3.fromRGB(255, 255, 255))
     if description then
@@ -122,14 +125,14 @@ local function createNotification(screenGui, title, description, duration, color
         descLabel.TextSize = 12
     end
     
-    -- Animação de entrada (da direita para esquerda)
-    TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -260, 1, -90)}):Play()
+    -- Animação de entrada
+    TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -210, 1, -90)}):Play()
     
     -- Sumir após duração
-    task.spawn(function()
-        task.wait(duration or 3)
-        TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, -260, 1, -150)}):Play()
-        task.wait(0.5)
+    spawn(function()
+        wait(duration or 3)
+        TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, -210, 1, -150)}):Play()
+        wait(0.5)
         notifFrame:Destroy()
     end)
 end
@@ -142,9 +145,8 @@ function GrokUILib.new()
         local window = createFrame(screenGui, UDim2.new(0, 300, 0, 300), UDim2.new(0.5, -150, 0.5, -150), Color3.fromRGB(30, 30, 30), 8)
         window.Name = "Window_" .. title
         local titleBar = createFrame(window, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), Color3.fromRGB(20, 20, 20), 8)
-        createLabel(titleBar, title, UDim2.new(1, -10, 1, 0), UDim2.new(0, 10, 0, 0))
+        createLabel(titleBar, title, UDim2.new(1, 0, 1, 0), UDim2.new(0, 10, 0, 0))
         
-        -- Drag
         local dragging = false
         local dragStart = nil
         local startPos = nil
@@ -173,33 +175,32 @@ function GrokUILib.new()
         local content = createFrame(window, UDim2.new(1, 0, 1, -30), UDim2.new(0, 0, 0, 30))
         content.BackgroundTransparency = 1
         
+        local components = {}
         local yOffset = 5
         
         function window:AddButton(text, callback)
             createButton(content, text, callback)
             yOffset = yOffset + 30
             content.Size = UDim2.new(1, 0, 0, yOffset)
-            window.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddToggle(text, callback)
             createToggle(content, text, false, callback)
             yOffset = yOffset + 30
             content.Size = UDim2.new(1, 0, 0, yOffset)
-            window.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddSlider(text, min, max, default, callback)
             createSlider(content, text, min or 0, max or 100, default, callback)
             yOffset = yOffset + 45
             content.Size = UDim2.new(1, 0, 0, yOffset)
-            window.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddNotification(title, description, duration, colors)
             createNotification(screenGui, title, description, duration, colors)
         end
         
+        table.insert(components, window)
         return window
     end
     
@@ -210,24 +211,4 @@ function GrokUILib.new()
     return self
 end
 
--- === EXECUÇÃO AUTOMÁTICA (Teste da UI) ===
-local lib = GrokUILib.new()
-local window = lib:CreateWindow("Grok UI - Funcionando via GitHub!")
-
-window:AddButton("Teste Notificação", function()
-    window:AddNotification("Sucesso!", "Carregado do GitHub! 😎", 4, {
-        Background = Color3.fromRGB(40, 100, 40),
-        Title = Color3.fromRGB(255, 255, 255),
-        Description = Color3.fromRGB(200, 255, 200)
-    })
-end)
-
-window:AddToggle("Teste Toggle", function(state)
-    window:AddNotification("Toggle", state and "Ligado!" or "Desligado!", 3)
-end)
-
-window:AddSlider("Teste Slider", 0, 100, 50, function(value)
-    window:AddNotification("Slider", "Valor: " .. value, 2)
-end)
-
-window:AddNotification("GitHub OK!", "Lib carregada com sucesso. Teste os elementos!", 5)
+return GrokUILib
