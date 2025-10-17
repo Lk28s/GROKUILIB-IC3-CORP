@@ -1,9 +1,9 @@
 -- GrokMainScript: Script principal com Aimbot e ESP por Ic3 Corp
--- Versão 3.1 (Outubro 2025) - By Grok (xAI)
+-- Versão 3.2 (Outubro 2025) - By Grok (xAI)
 -- Requer UniversalGrokLIB.lua
 -- AVISO: Este script pode causar suspensão permanente da conta. Use por sua conta e risco!
 
-local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/Universal%20GrokLIB.lua"
+local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/UniversalGrokLIB.lua"
 local response = game:HttpGet(libUrl)
 if not response or #response == 0 then
     warn("Falha ao baixar UniversalGrokLIB.lua")
@@ -65,8 +65,10 @@ local function isVisible(target)
 end
 
 local function updateDrawings()
-    FOVring.Position = Cam.ViewportSize / 2
-    FOVring.Radius = _G.FOVSize
+    if Cam and Cam.ViewportSize then
+        FOVring.Position = Cam.ViewportSize / 2
+        FOVring.Radius = _G.FOVSize
+    end
 end
 
 -- ESP
@@ -123,12 +125,16 @@ end
 
 -- Aimbot
 local function lookAt(target)
-    local lookVector = (target - Cam.CFrame.Position).Unit
-    local newCFrame = CFrame.new(Cam.CFrame.Position, Cam.CFrame.Position + lookVector)
-    Cam.CFrame = Cam.CFrame:Lerp(newCFrame, _G.AimbotSmoothness)
+    if not Cam or not target or not target.Position then return end
+    local lookVector = (target.Position - Cam.CFrame.Position).Unit
+    if lookVector.Magnitude > 0 then
+        local newCFrame = CFrame.new(Cam.CFrame.Position, Cam.CFrame.Position + lookVector)
+        Cam.CFrame = Cam.CFrame:Lerp(newCFrame, _G.AimbotSmoothness)
+    end
 end
 
 local function getClosestPlayerInFOV()
+    if not isSafe() then return nil end
     local nearest = nil
     local last = math.huge
     local playerMousePos = Cam.ViewportSize / 2
@@ -142,12 +148,12 @@ local function getClosestPlayerInFOV()
 
             if distance < last and isVisible and distance < _G.FOVSize and distance < _G.MaxDistance and isVisible(part) then
                 last = distance
-                nearest = player
+                nearest = part
             end
         end
     end
 
-    return nearest and nearest.Character and nearest.Character:FindFirstChild(_G.AimbotTarget)
+    return nearest
 end
 
 local function aimbotLoop()
@@ -156,7 +162,7 @@ local function aimbotLoop()
             if not isSafe() then break end
             local target = getClosestPlayerInFOV()
             if target then
-                lookAt(target.Position)
+                lookAt(target)
             end
         end
     end)
@@ -206,15 +212,17 @@ end)
 
 -- Loop de atualização
 RunService.RenderStepped:Connect(function()
-    updateDrawings()
-    if _G.AimbotEnabled then
-        local target = getClosestPlayerInFOV()
-        if target then
-            lookAt(target.Position)
+    if Cam then
+        updateDrawings()
+        if _G.AimbotEnabled then
+            local target = getClosestPlayerInFOV()
+            if target and target.Position then
+                lookAt(target)
+            end
         end
-    end
-    if _G.ESPEnabled then
-        updateESP()
+        if _G.ESPEnabled then
+            updateESP()
+        end
     end
 end)
 
