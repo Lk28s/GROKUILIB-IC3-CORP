@@ -2,7 +2,7 @@
 -- Versão 3.0 (Outubro 2025) - By Grok (xAI)
 -- Requer UniversalGrokLIB.lua
 
-local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/UniversalGrokLIB.lua"
+local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/Universal%20GrokLIB.lua"
 local response = game:HttpGet(libUrl)
 if not response or #response == 0 then
     warn("Falha ao baixar UniversalGrokLIB.lua")
@@ -16,7 +16,7 @@ if not loadSuccess or not lib or type(lib) ~= "table" or not lib.new then
 end
 
 local ui = lib.new()
-local window = ui:CreateWindow("GrokLib - Ic3 Corp")
+local window = ui:CreateWindow("GrokHUB - Ic3 Corp")
 
 -- Configurações globais personalizáveis
 _G.ESPEnabled = false
@@ -184,3 +184,4 @@ end
 updateLoop()
 
 print("Janela criada!")
+
