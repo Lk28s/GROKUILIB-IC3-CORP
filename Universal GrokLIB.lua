@@ -1,5 +1,5 @@
 -- Universal GrokLIB: Biblioteca UI modular para Roblox by Ic3 Corp
--- Versão 2.1 (Outubro 2025) - By Grok (xAI)
+-- Versão 2.2 (Outubro 2025) - By Grok (xAI)
 -- Licença: Livre para uso em projetos
 
 local GrokUILib = {}
@@ -20,6 +20,7 @@ local function createFrame(parent, size, position, color, cornerRadius)
     frame.Position = position or UDim2.new(0.5, -150, 0.5, -100)
     frame.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
     frame.BorderSizePixel = 0
+    frame.Active = true -- Habilita interatividade
     frame.Parent = parent
     if cornerRadius then
         local corner = Instance.new("UICorner")
@@ -57,6 +58,7 @@ local function createButton(content, text, callback, yOffset)
             if callback then callback() end
         end
     end)
+    button.Active = true -- Garante que o botão seja clicável
 end
 
 local function createToggle(content, text, default, callback, yOffset)
@@ -74,6 +76,7 @@ local function createToggle(content, text, default, callback, yOffset)
             if callback then callback(state) end
         end
     end)
+    toggle.Active = true
 end
 
 local function createSlider(content, text, min, max, default, callback, yOffset)
@@ -143,25 +146,27 @@ function GrokUILib.new()
     function self:CreateWindow(title)
         local window = {}
         local frame = createFrame(screenGui, UDim2.new(0, 300, 0, 300), UDim2.new(0.5, -150, 0.5, -150), Color3.fromRGB(30, 30, 30), 8)
-        local titleBar = createFrame(frame, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), Color3.fromRGB(20, 20, 30), 8)
+        local titleBar = createFrame(frame, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), Color3.fromRGB(20, 20, 20), 8)
         createLabel(titleBar, title, UDim2.new(1, 0, 1, 0), UDim2.new(0, 10, 0, 0))
         
-        local dragging, dragStart, startPos = false, nil, nil
+        local dragging, dragInput, startPos, startOffset = false, nil, nil, nil
         titleBar.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging, dragStart, startPos = true, input.Position, frame.Position
+                dragging, dragInput, startPos, startOffset = true, input, frame.Position, input.Position - frame.AbsolutePosition
             end
         end)
-        
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local delta = input.Position - dragStart
-                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+
+        titleBar.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                local delta = input.Position - startOffset
+                frame.Position = UDim2.new(0, delta.X, 0, delta.Y)
             end
         end)
-        
+
         UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
         end)
         
         local content = createFrame(frame, UDim2.new(1, 0, 1, -30), UDim2.new(0, 0, 0, 30))
