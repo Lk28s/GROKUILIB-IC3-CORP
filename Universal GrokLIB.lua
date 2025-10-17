@@ -11,7 +11,7 @@ local function createScreenGui(name, displayOrder)
     screenGui.Name = name or "GrokUILib"
     screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     screenGui.ResetOnSpawn = false
-    screenGui.DisplayOrder = displayOrder or 10 -- Prioridade alta
+    screenGui.DisplayOrder = displayOrder or 10
     return screenGui
 end
 
@@ -44,8 +44,8 @@ local function createLabel(parent, text, size, position, textColor)
     return label
 end
 
-local function createButton(parent, text, callback)
-    local button = createFrame(parent, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, 0), Color3.fromRGB(50, 50, 50), 5)
+local function createButton(parent, text, callback, yOffset)
+    local button = createFrame(parent, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, yOffset), Color3.fromRGB(50, 50, 50), 5)
     local btnLabel = createLabel(button, text, UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0))
     btnLabel.BackgroundTransparency = 1
     btnLabel.TextScaled = false
@@ -60,11 +60,10 @@ local function createButton(parent, text, callback)
         end
     end)
     button.Active = true
-    return button
 end
 
-local function createToggle(parent, text, default, callback)
-    local toggleFrame = createFrame(parent, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, 0), Color3.fromRGB(50, 50, 50), 5)
+local function createToggle(parent, text, default, callback, yOffset)
+    local toggleFrame = createFrame(parent, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, yOffset), Color3.fromRGB(50, 50, 50), 5)
     createLabel(toggleFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 5, 0, 0))
     
     local toggle = createFrame(toggleFrame, UDim2.new(0, 20, 0, 15), UDim2.new(1, -25, 0.5, -7.5), Color3.fromRGB(100, 100, 100), 5)
@@ -79,11 +78,10 @@ local function createToggle(parent, text, default, callback)
         end
     end)
     toggle.Active = true
-    return toggleFrame
 end
 
-local function createSlider(parent, text, min, max, default, callback)
-    local sliderFrame = createFrame(parent, UDim2.new(1, -10, 0, 40), UDim2.new(0, 5, 0, 0), Color3.fromRGB(50, 50, 50), 5)
+local function createSlider(parent, text, min, max, default, callback, yOffset)
+    local sliderFrame = createFrame(parent, UDim2.new(1, -10, 0, 40), UDim2.new(0, 5, 0, yOffset), Color3.fromRGB(50, 50, 50), 5)
     local label = createLabel(sliderFrame, text .. ": " .. default, UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0, 0))
     
     local sliderBar = createFrame(sliderFrame, UDim2.new(1, -10, 0, 10), UDim2.new(0, 5, 0.75, 0), Color3.fromRGB(70, 70, 70), 3)
@@ -119,7 +117,6 @@ local function createSlider(parent, text, min, max, default, callback)
     end)
     
     updateSlider(sliderBar.AbsolutePosition.X + (sliderBar.AbsoluteSize.X * ((default - min) / (max - min))))
-    return sliderFrame
 end
 
 local function createNotification(screenGui, title, description, duration, colors)
@@ -146,39 +143,48 @@ end
 function GrokUILib.new()
     local self = {}
     local screenGuiMain = createScreenGui("GrokUILibMain", 10)
-    local screenGuiMini = createScreenGui("GrokUILibMini", 11) -- Prioridade maior que o main
-
+    local screenGuiMini = createScreenGui("GrokUILibMini", 11)
+    
     local mainWindow = nil
     local isMinimized = false
-
+    
     -- Mini Hub
     local miniFrame = createFrame(screenGuiMini, UDim2.new(0, 50, 0, 50), UDim2.new(1, -60, 0, 10), Color3.fromRGB(40, 40, 40), 5)
     miniFrame.Active = true
-    miniFrame.Draggable = true -- Para arrastar o mini hub (se suportado)
-
-    local minimizeButton = createButton(miniFrame, "Min", function()
-        if mainWindow and not isMinimized then
-            mainWindow.Frame.Visible = false
-            isMinimized = true
-            createNotification(screenGuiMini, "Mini Hub", "Hub minimizado", 2)
+    
+    local minimizeButton = createFrame(miniFrame, UDim2.new(0, 5, 0, 5), UDim2.new(0, 0, 0, 0), Color3.fromRGB(70, 70, 70), 3)
+    local minLabel = createLabel(minimizeButton, "Min", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), Color3.fromRGB(255, 255, 255))
+    minLabel.TextScaled = true
+    minLabel.Font = Enum.Font.SourceSansBold
+    
+    minimizeButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if mainWindow and not isMinimized then
+                mainWindow.Frame.Visible = false
+                isMinimized = true
+                createNotification(screenGuiMini, "Mini Hub", "Hub minimizado!", 2, {Background = Color3.fromRGB(40, 40, 40), Title = Color3.fromRGB(0, 255, 0)})
+            end
         end
     end)
-
-    local maximizeButton = createButton(miniFrame, "Max", function()
-        if mainWindow and isMinimized then
-            mainWindow.Frame.Visible = true
-            isMinimized = false
-            createNotification(screenGuiMini, "Mini Hub", "Hub maximizado", 2)
+    
+    local maximizeButton = createFrame(miniFrame, UDim2.new(0, 5, 0, 25), UDim2.new(0, 0, 0, 0), Color3.fromRGB(70, 70, 70), 3)
+    local maxLabel = createLabel(maximizeButton, "Max", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), Color3.fromRGB(255, 255, 255))
+    maxLabel.TextScaled = true
+    maxLabel.Font = Enum.Font.SourceSansBold
+    
+    maximizeButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if mainWindow and isMinimized then
+                mainWindow.Frame.Visible = true
+                isMinimized = false
+                createNotification(screenGuiMini, "Mini Hub", "Hub maximizado!", 2, {Background = Color3.fromRGB(40, 40, 40), Title = Color3.fromRGB(0, 255, 0)})
+            end
         end
     end)
-
-    -- Ajusta o layout do mini hub
-    minimizeButton.Position = UDim2.new(0, 5, 0, 5)
-    maximizeButton.Position = UDim2.new(0, 5, 0, 30)
-
+    
     function self:CreateWindow(title)
         local window = {}
-        mainWindow = window -- Armazena a referência
+        mainWindow = window
         local frame = createFrame(screenGuiMain, UDim2.new(0, 300, 0, 300), UDim2.new(0.5, -150, 0.5, -150), Color3.fromRGB(30, 30, 30), 8)
         local titleBar = createFrame(frame, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), Color3.fromRGB(20, 20, 20), 8)
         createLabel(titleBar, title, UDim2.new(1, 0, 1, 0), UDim2.new(0, 10, 0, 0))
@@ -189,24 +195,21 @@ function GrokUILib.new()
         local yOffset = 5
         
         function window:AddButton(text, callback)
-            local button = createButton(content, text, callback)
-            button.Position = UDim2.new(0, 5, 0, yOffset)
+            createButton(content, text, callback, yOffset)
             yOffset = yOffset + 30
             content.Size = UDim2.new(1, 0, 0, yOffset)
             frame.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddToggle(text, callback)
-            local toggle = createToggle(content, text, false, callback)
-            toggle.Position = UDim2.new(0, 5, 0, yOffset)
+            createToggle(content, text, false, callback, yOffset)
             yOffset = yOffset + 30
             content.Size = UDim2.new(1, 0, 0, yOffset)
             frame.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddSlider(text, min, max, default, callback)
-            local slider = createSlider(content, text, min or 0, max or 100, default, callback)
-            slider.Position = UDim2.new(0, 5, 0, yOffset)
+            createSlider(content, text, min or 0, max or 100, default, callback, yOffset)
             yOffset = yOffset + 45
             content.Size = UDim2.new(1, 0, 0, yOffset)
             frame.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
