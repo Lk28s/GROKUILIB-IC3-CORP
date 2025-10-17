@@ -1,6 +1,6 @@
--- Universal GrokLIB: Biblioteca UI completa para Roblox by Ic3 Corp
--- Versão 1.6 (Outubro 2025) - By Grok (xAI)
--- Licença: Livre para uso
+-- Universal GrokLIB: Biblioteca UI modular para Roblox by Ic3 Corp
+-- Versão 1.8 (Outubro 2025) - By Grok (xAI)
+-- Licença: Livre para uso em projetos
 
 local GrokUILib = {}
 local TweenService = game:GetService("TweenService")
@@ -212,4 +212,3 @@ function GrokUILib.new()
 end
 
 return GrokUILib
-
