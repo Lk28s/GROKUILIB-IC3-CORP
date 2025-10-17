@@ -1,17 +1,17 @@
 -- Universal GrokLIB: Biblioteca UI modular para Roblox by Ic3 Corp
--- Versão 2.3 (Outubro 2025) - By Grok (xAI)
+-- Versão 2.4 (Outubro 2025) - By Grok (xAI)
 -- Licença: Livre para uso em projetos
 
 local GrokUILib = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
-local function createScreenGui()
+local function createScreenGui(name, displayOrder)
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "GrokUILib"
+    screenGui.Name = name or "GrokUILib"
     screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     screenGui.ResetOnSpawn = false
-    screenGui.DisplayOrder = 1 -- Garante que fique acima de outros GUIs
+    screenGui.DisplayOrder = displayOrder or 10 -- Prioridade alta
     return screenGui
 end
 
@@ -21,7 +21,7 @@ local function createFrame(parent, size, position, color, cornerRadius)
     frame.Position = position or UDim2.new(0.5, -150, 0.5, -100)
     frame.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
     frame.BorderSizePixel = 0
-    frame.Active = true -- Habilita interatividade
+    frame.Active = true
     frame.Parent = parent
     if cornerRadius then
         local corner = Instance.new("UICorner")
@@ -44,8 +44,8 @@ local function createLabel(parent, text, size, position, textColor)
     return label
 end
 
-local function createButton(content, text, callback, yOffset)
-    local button = createFrame(content, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, yOffset), Color3.fromRGB(50, 50, 50), 5)
+local function createButton(parent, text, callback)
+    local button = createFrame(parent, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, 0), Color3.fromRGB(50, 50, 50), 5)
     local btnLabel = createLabel(button, text, UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0))
     btnLabel.BackgroundTransparency = 1
     btnLabel.TextScaled = false
@@ -60,10 +60,11 @@ local function createButton(content, text, callback, yOffset)
         end
     end)
     button.Active = true
+    return button
 end
 
-local function createToggle(content, text, default, callback, yOffset)
-    local toggleFrame = createFrame(content, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, yOffset), Color3.fromRGB(50, 50, 50), 5)
+local function createToggle(parent, text, default, callback)
+    local toggleFrame = createFrame(parent, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, 0), Color3.fromRGB(50, 50, 50), 5)
     createLabel(toggleFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 5, 0, 0))
     
     local toggle = createFrame(toggleFrame, UDim2.new(0, 20, 0, 15), UDim2.new(1, -25, 0.5, -7.5), Color3.fromRGB(100, 100, 100), 5)
@@ -78,10 +79,11 @@ local function createToggle(content, text, default, callback, yOffset)
         end
     end)
     toggle.Active = true
+    return toggleFrame
 end
 
-local function createSlider(content, text, min, max, default, callback, yOffset)
-    local sliderFrame = createFrame(content, UDim2.new(1, -10, 0, 40), UDim2.new(0, 5, 0, yOffset), Color3.fromRGB(50, 50, 50), 5)
+local function createSlider(parent, text, min, max, default, callback)
+    local sliderFrame = createFrame(parent, UDim2.new(1, -10, 0, 40), UDim2.new(0, 5, 0, 0), Color3.fromRGB(50, 50, 50), 5)
     local label = createLabel(sliderFrame, text .. ": " .. default, UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0, 0))
     
     local sliderBar = createFrame(sliderFrame, UDim2.new(1, -10, 0, 10), UDim2.new(0, 5, 0.75, 0), Color3.fromRGB(70, 70, 70), 3)
@@ -117,6 +119,7 @@ local function createSlider(content, text, min, max, default, callback, yOffset)
     end)
     
     updateSlider(sliderBar.AbsolutePosition.X + (sliderBar.AbsoluteSize.X * ((default - min) / (max - min))))
+    return sliderFrame
 end
 
 local function createNotification(screenGui, title, description, duration, colors)
@@ -142,69 +145,77 @@ end
 
 function GrokUILib.new()
     local self = {}
-    local screenGui = createScreenGui()
-    
+    local screenGuiMain = createScreenGui("GrokUILibMain", 10)
+    local screenGuiMini = createScreenGui("GrokUILibMini", 11) -- Prioridade maior que o main
+
+    local mainWindow = nil
+    local isMinimized = false
+
+    -- Mini Hub
+    local miniFrame = createFrame(screenGuiMini, UDim2.new(0, 50, 0, 50), UDim2.new(1, -60, 0, 10), Color3.fromRGB(40, 40, 40), 5)
+    miniFrame.Active = true
+    miniFrame.Draggable = true -- Para arrastar o mini hub (se suportado)
+
+    local minimizeButton = createButton(miniFrame, "Min", function()
+        if mainWindow and not isMinimized then
+            mainWindow.Frame.Visible = false
+            isMinimized = true
+            createNotification(screenGuiMini, "Mini Hub", "Hub minimizado", 2)
+        end
+    end)
+
+    local maximizeButton = createButton(miniFrame, "Max", function()
+        if mainWindow and isMinimized then
+            mainWindow.Frame.Visible = true
+            isMinimized = false
+            createNotification(screenGuiMini, "Mini Hub", "Hub maximizado", 2)
+        end
+    end)
+
+    -- Ajusta o layout do mini hub
+    minimizeButton.Position = UDim2.new(0, 5, 0, 5)
+    maximizeButton.Position = UDim2.new(0, 5, 0, 30)
+
     function self:CreateWindow(title)
         local window = {}
-        local frame = createFrame(screenGui, UDim2.new(0, 300, 0, 300), UDim2.new(0.5, -150, 0.5, -150), Color3.fromRGB(30, 30, 30), 8)
+        mainWindow = window -- Armazena a referência
+        local frame = createFrame(screenGuiMain, UDim2.new(0, 300, 0, 300), UDim2.new(0.5, -150, 0.5, -150), Color3.fromRGB(30, 30, 30), 8)
         local titleBar = createFrame(frame, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), Color3.fromRGB(20, 20, 20), 8)
         createLabel(titleBar, title, UDim2.new(1, 0, 1, 0), UDim2.new(0, 10, 0, 0))
-        
-        local dragging, dragInput, startPos, startOffset = false, nil, nil, nil
-        titleBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging, dragInput, startPos, startOffset = true, input, frame.Position, input.Position - frame.AbsolutePosition
-                print("Arrastar iniciado") -- Debug
-            end
-        end)
-
-        titleBar.InputChanged:Connect(function(input)
-            if input == dragInput and dragging then
-                local delta = input.Position - startOffset
-                frame.Position = UDim2.new(0, delta.X, 0, delta.Y)
-                print("Arrastando...") -- Debug
-            end
-        end)
-
-        UserInputService.InputEnded:Connect(function(input)
-            if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and input == dragInput then
-                dragging = false
-                print("Arrastar terminado") -- Debug
-            end
-        end)
         
         local content = createFrame(frame, UDim2.new(1, 0, 1, -30), UDim2.new(0, 0, 0, 30))
         content.BackgroundTransparency = 1
         
         local yOffset = 5
         
-        -- Define métodos no objeto window
         function window:AddButton(text, callback)
-            createButton(content, text, callback, yOffset)
+            local button = createButton(content, text, callback)
+            button.Position = UDim2.new(0, 5, 0, yOffset)
             yOffset = yOffset + 30
             content.Size = UDim2.new(1, 0, 0, yOffset)
             frame.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddToggle(text, callback)
-            createToggle(content, text, false, callback, yOffset)
+            local toggle = createToggle(content, text, false, callback)
+            toggle.Position = UDim2.new(0, 5, 0, yOffset)
             yOffset = yOffset + 30
             content.Size = UDim2.new(1, 0, 0, yOffset)
             frame.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddSlider(text, min, max, default, callback)
-            createSlider(content, text, min or 0, max or 100, default, callback, yOffset)
+            local slider = createSlider(content, text, min or 0, max or 100, default, callback)
+            slider.Position = UDim2.new(0, 5, 0, yOffset)
             yOffset = yOffset + 45
             content.Size = UDim2.new(1, 0, 0, yOffset)
             frame.Size = UDim2.new(0, 300, 0, 30 + yOffset + 10)
         end
         
         function window:AddNotification(title, description, duration, colors)
-            createNotification(screenGui, title, description, duration, colors)
+            createNotification(screenGuiMain, title, description, duration, colors)
         end
         
-        -- Vincula o frame ao objeto window
         window.Frame = frame
         setmetatable(window, { __index = frame })
         
@@ -212,7 +223,8 @@ function GrokUILib.new()
     end
     
     function self:Destroy()
-        screenGui:Destroy()
+        screenGuiMain:Destroy()
+        screenGuiMini:Destroy()
     end
     
     return self
