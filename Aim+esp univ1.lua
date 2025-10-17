@@ -3,7 +3,7 @@
 -- Requer UniversalGrokLIB.lua
 -- AVISO: Este script pode causar suspensão permanente da conta. Use por sua conta e risco!
 
-local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/UniversalGrokLIB.lua"
+local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/Universal%20GrokLIB.lua"
 local response = game:HttpGet(libUrl)
 if not response or #response == 0 then
     warn("Falha ao baixar UniversalGrokLIB.lua")
@@ -227,3 +227,4 @@ RunService.RenderStepped:Connect(function()
 end)
 
 print("Janela criada!")
+
