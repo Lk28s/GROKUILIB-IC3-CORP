@@ -1,20 +1,21 @@
 -- Executor para GrokUILib com ESP AirHub-Style e Aimbot - Ic3 Corp (Anti-Deteção)
--- Versão 1.8 (Outubro 2025) - By Grok (xAI)
+-- Versão 2.0 (Outubro 2025) - By Grok (xAI)
 -- Rode com loadstring(game:HttpGet("URL_DO_EXECUTOR"))()
 
--- Configurações globais (ajuste para testes)
+-- Configurações globais
 _G.ESPEnabled = false
 _G.AimbotEnabled = false
 _G.AimbotTarget = "Head" -- "Head" ou "Torso"
 _G.FOVSize = 100
 _G.TeamCheckEnabled = true
 _G.WallCheckEnabled = true
-_G.ESPColor = Color3.fromRGB(0, 255, 0) -- Verde, como na foto
+_G.ESPColor = Color3.fromRGB(0, 255, 0)
 _G.AimbotSmoothness = 0.1
-_G.MaxESP Distance = 1000 -- Distância máxima para ESP
+_G.MaxESP Distance = 1000
 
-local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/Universal%20GrokLIB.lua" -- Link raw da GrokUILib.lua
-local lib = loadstring(game:HttpGet(libUrl))()
+local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/GrokUILib.lua" -- Link da lib
+local success, lib = pcall(loadstring(game:HttpGet(libUrl)))
+if not success then error("Falha ao carregar a lib: " .. lib) end
 
 local window = lib:CreateWindow("GrokLib - Ic3 Corp")
 
@@ -46,7 +47,7 @@ local function drawESP(player)
     local distance = (hrp.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
     if distance > _G.MaxESP Distance then return end
     
-    -- Caixa 2D (estilo AirHub)
+    -- Caixa 2D (AirHub-style)
     local billboard = Instance.new("BillboardGui")
     billboard.Name = player.Name .. "_ESP"
     billboard.Parent = game.CoreGui
@@ -74,7 +75,7 @@ local function drawESP(player)
     nameLabel.TextScaled = true
     nameLabel.Font = Enum.Font.SourceSansBold
     
-    -- Linha de traço (tracer) até o chão
+    -- Linha de traço (tracer)
     local line = Instance.new("Part")
     line.Name = player.Name .. "_Tracer"
     line.Parent = workspace
@@ -89,14 +90,12 @@ end
 
 local function updateESP()
     if not _G.ESPEnabled or not isSafe() then return end
-    -- Limpa ESP antigo
     for _, obj in pairs(game.CoreGui:GetChildren()) do
         if obj.Name:find("_ESP") then obj:Destroy() end
     end
     for _, obj in pairs(workspace:GetChildren()) do
         if obj.Name:find("_Tracer") then obj:Destroy() end
     end
-    -- Desenha novo
     for _, player in pairs(getPlayers()) do
         if player ~= game.Players.LocalPlayer and not isTeamMate(player) then
             spawn(function()
@@ -108,8 +107,7 @@ end
 
 local function aimbotLoop()
     spawn(function()
-        while _G.AimbotEnabled do
-            wait(0.1) -- Delay para anti-deteção
+        while _G.AimbotEnabled and wait(0.1) do
             if not isSafe() then break end
             local target = nil
             local minDistance = _G.FOVSize
@@ -142,16 +140,16 @@ end
 -- Loop para atualizar ESP
 spawn(function()
     while true do
-        wait(0.5) -- Atualiza a cada 0.5s para eficiência
+        wait(0.5)
         if _G.ESPEnabled then updateESP() end
     end
 end)
 
--- UI com barra horizontal para FOV
+-- UI
 window:AddButton("Ativar/Desativar ESP", function()
     _G.ESPEnabled = not _G.ESPEnabled
     if _G.ESPEnabled then updateESP() end
-    window:AddNotification("ESP", _G.ESPEnabled and "Ativado (Caixas + Linhas)" or "Desativado", 3)
+    window:AddNotification("ESP", _G.ESPEnabled and "Ativado (AirHub-style)" or "Desativado", 3)
 end)
 
 window:AddButton("Desativar ESP Agora", function()
@@ -192,10 +190,9 @@ window:AddToggle("Aimbot: Cabeça/Torso", function(state)
     window:AddNotification("Aimbot", "Alvo: " .. _G.AimbotTarget, 3)
 end)
 
--- Barra horizontal para FOV (estilo volume)
-window:AddSlider("FOV (Horizontal)", 50, 200, 100, function(value)
+window:AddSlider("FOV", 50, 200, 100, function(value)
     _G.FOVSize = value
     window:AddNotification("FOV", "Definido para " .. value .. " studs", 2)
 end)
 
-window:AddNotification("Carregado!", "ESP AirHub-style com FOV ajustável pronto. Use 'Ativar/Desativar ESP'!", 5)
+window:AddNotification("Carregado!", "ESP e Aimbot prontos. Teste com 'Ativar/Desativar ESP'!", 5)
