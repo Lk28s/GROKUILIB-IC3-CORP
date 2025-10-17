@@ -1,10 +1,5 @@
--- GrokLib by Ic3 Corp Cheats, this Script is not 100% segured to use, riskBan is low.
-
 local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/GrokUILib%20universal%20AIM%20v1%20Executed.lua"))()
-
--- Create a window for UI
 local window = lib:CreateWindow("GrokLib - Ic3 Corp")
-
 -- Add a button to execute custom toast
 window:AddButton("Mostrar Notificação", function()
     window:AddNotification(
@@ -36,4 +31,5 @@ end)
 -- Notificação inicial ao carregar o script
 
 window:AddNotification("Carregado!", "GrokLib da Ic3 Corp esta ativa e executada!", 4)
+
 
