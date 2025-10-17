@@ -1,5 +1,5 @@
 -- Universal GrokLIB: Biblioteca UI modular para Roblox by Ic3 Corp
--- Versão 2.4 (Outubro 2025) - By Grok (xAI)
+-- Versão 2.5 (Outubro 2025) - By Grok (xAI)
 -- Licença: Livre para uso em projetos
 
 local GrokUILib = {}
@@ -152,7 +152,7 @@ function GrokUILib.new()
     local miniFrame = createFrame(screenGuiMini, UDim2.new(0, 50, 0, 50), UDim2.new(1, -60, 0, 10), Color3.fromRGB(40, 40, 40), 5)
     miniFrame.Active = true
     
-    local minimizeButton = createFrame(miniFrame, UDim2.new(0, 5, 0, 5), UDim2.new(0, 0, 0, 0), Color3.fromRGB(70, 70, 70), 3)
+    local minimizeButton = createFrame(miniFrame, UDim2.new(0, 40, 0, 20), UDim2.new(0, 5, 0, 5), Color3.fromRGB(70, 70, 70), 3)
     local minLabel = createLabel(minimizeButton, "Min", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), Color3.fromRGB(255, 255, 255))
     minLabel.TextScaled = true
     minLabel.Font = Enum.Font.SourceSansBold
@@ -167,7 +167,7 @@ function GrokUILib.new()
         end
     end)
     
-    local maximizeButton = createFrame(miniFrame, UDim2.new(0, 5, 0, 25), UDim2.new(0, 0, 0, 0), Color3.fromRGB(70, 70, 70), 3)
+    local maximizeButton = createFrame(miniFrame, UDim2.new(0, 40, 0, 20), UDim2.new(0, 5, 0, 25), Color3.fromRGB(70, 70, 70), 3)
     local maxLabel = createLabel(maximizeButton, "Max", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), Color3.fromRGB(255, 255, 255))
     maxLabel.TextScaled = true
     maxLabel.Font = Enum.Font.SourceSansBold
