@@ -34,4 +34,5 @@ window:AddSlider("Velocidade", 1, 100, 50, function(value)
 end)
 
 -- Notificação inicial ao carregar o script
+
 window:AddNotification("Carregado!", "GrokLib da Ic3 Corp esta ativa e executada!", 4)
