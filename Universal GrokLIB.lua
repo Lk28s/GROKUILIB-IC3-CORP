@@ -1,5 +1,5 @@
 -- Universal GrokLIB: Biblioteca UI modular para Roblox by Ic3 Corp
--- Versão 2.2 (Outubro 2025) - By Grok (xAI)
+-- Versão 2.3 (Outubro 2025) - By Grok (xAI)
 -- Licença: Livre para uso em projetos
 
 local GrokUILib = {}
@@ -11,6 +11,7 @@ local function createScreenGui()
     screenGui.Name = "GrokUILib"
     screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     screenGui.ResetOnSpawn = false
+    screenGui.DisplayOrder = 1 -- Garante que fique acima de outros GUIs
     return screenGui
 end
 
@@ -51,14 +52,14 @@ local function createButton(content, text, callback, yOffset)
     btnLabel.TextSize = 14
 
     button.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             TweenService:Create(button, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(70, 70, 70)}):Play()
             task.wait(0.1)
             TweenService:Create(button, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
             if callback then callback() end
         end
     end)
-    button.Active = true -- Garante que o botão seja clicável
+    button.Active = true
 end
 
 local function createToggle(content, text, default, callback, yOffset)
@@ -70,7 +71,7 @@ local function createToggle(content, text, default, callback, yOffset)
     toggle.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     
     toggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             state = not state
             toggle.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
             if callback then callback(state) end
@@ -97,20 +98,20 @@ local function createSlider(content, text, min, max, default, callback, yOffset)
     end
     
     sliderBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             updateSlider(input.Position.X)
         end
     end)
     
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             updateSlider(input.Position.X)
         end
     end)
     
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end)
@@ -151,8 +152,9 @@ function GrokUILib.new()
         
         local dragging, dragInput, startPos, startOffset = false, nil, nil, nil
         titleBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging, dragInput, startPos, startOffset = true, input, frame.Position, input.Position - frame.AbsolutePosition
+                print("Arrastar iniciado") -- Debug
             end
         end)
 
@@ -160,12 +162,14 @@ function GrokUILib.new()
             if input == dragInput and dragging then
                 local delta = input.Position - startOffset
                 frame.Position = UDim2.new(0, delta.X, 0, delta.Y)
+                print("Arrastando...") -- Debug
             end
         end)
 
         UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and input == dragInput then
                 dragging = false
+                print("Arrastar terminado") -- Debug
             end
         end)
         
