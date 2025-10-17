@@ -1,6 +1,7 @@
 -- GrokMainScript: Script principal com Aimbot e ESP por Ic3 Corp
--- Versão 3.0 (Outubro 2025) - By Grok (xAI)
+-- Versão 3.1 (Outubro 2025) - By Grok (xAI)
 -- Requer UniversalGrokLIB.lua
+-- AVISO: Este script pode causar suspensão permanente da conta. Use por sua conta e risco!
 
 local libUrl = "https://raw.githubusercontent.com/Lk28s/GROKUILIB-IC3-CORP/refs/heads/main/Universal%20GrokLIB.lua"
 local response = game:HttpGet(libUrl)
@@ -16,46 +17,64 @@ if not loadSuccess or not lib or type(lib) ~= "table" or not lib.new then
 end
 
 local ui = lib.new()
-local window = ui:CreateWindow("GrokHUB - Ic3 Corp")
+local window = ui:CreateWindow("GrokLib - Ic3 Corp")
 
--- Configurações globais personalizáveis
+-- Configurações globais
 _G.ESPEnabled = false
 _G.AimbotEnabled = false
 _G.AimbotTarget = "Head" -- "Head" or "Torso"
-_G.FOVSize = 100
-_G.TeamCheckEnabled = true
-_G.WallCheckEnabled = true
+_G.FOVSize = 90
+_G.MaxDistance = 700
+_G.TeamCheck = true
+_G.WallCheck = true
 _G.ESPColor = Color3.fromRGB(0, 255, 0)
 _G.AimbotSmoothness = 0.1
-_G.MaxESPDistance = 1000
+
+-- Serviços
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Cam = workspace.CurrentCamera
+
+-- Desenhos
+local FOVring = Drawing.new("Circle")
+FOVring.Visible = true
+FOVring.Thickness = 1
+FOVring.Color = Color3.fromRGB(128, 0, 128)
+FOVring.Filled = false
+FOVring.Radius = _G.FOVSize
+FOVring.Position = Cam.ViewportSize / 2
+FOVring.Transparency = 0.1
 
 -- Funções utilitárias
 local function isSafe()
-    return game and game.Players and game.Players.LocalPlayer and game.Players.LocalPlayer.Character
-end
-
-local function getPlayers()
-    return isSafe() and game.Players:GetPlayers() or {}
+    return game and Players and Players.LocalPlayer and Players.LocalPlayer.Character
 end
 
 local function isTeamMate(player)
-    local localPlayer = game.Players.LocalPlayer
-    return _G.TeamCheckEnabled and localPlayer and player and localPlayer.Team == player.Team
+    local localPlayer = Players.LocalPlayer
+    return _G.TeamCheck and localPlayer and player and localPlayer.Team == player.Team
 end
 
 local function isVisible(target)
+    if not _G.WallCheck then return true end
     if not isSafe() then return false end
-    local ray = Ray.new(game.Players.LocalPlayer.Character.Head.Position, (target.Position - game.Players.LocalPlayer.Character.Head.Position).Unit * 300)
-    local hit, pos = workspace:FindPartOnRayWithIgnoreList(ray, {game.Players.LocalPlayer.Character})
-    return hit and (hit:IsDescendantOf(target.Parent) or not _G.WallCheckEnabled)
+    local ray = Ray.new(Cam.CFrame.Position, (target.Position - Cam.CFrame.Position).Unit * 300)
+    local hit, pos = workspace:FindPartOnRayWithIgnoreList(ray, {Players.LocalPlayer.Character})
+    return hit and hit:IsDescendantOf(target.Parent)
+end
+
+local function updateDrawings()
+    FOVring.Position = Cam.ViewportSize / 2
+    FOVring.Radius = _G.FOVSize
 end
 
 -- ESP
 local function drawESP(player)
     if not isSafe() or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
     local hrp = player.Character.HumanoidRootPart
-    local distance = (hrp.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-    if distance > _G.MaxESPDistance then return end
+    local distance = (hrp.Position - Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    if distance > _G.MaxDistance then return end
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name = player.Name .. "_ESP"
@@ -95,41 +114,49 @@ local function updateESP()
     for _, obj in pairs(game.CoreGui:GetChildren()) do
         if obj.Name:find("_ESP") then obj:Destroy() end
     end
-    for _, player in pairs(getPlayers()) do
-        if player ~= game.Players.LocalPlayer and not isTeamMate(player) then
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer and not isTeamMate(player) then
             spawn(function() drawESP(player) end)
         end
     end
 end
 
 -- Aimbot
+local function lookAt(target)
+    local lookVector = (target - Cam.CFrame.Position).Unit
+    local newCFrame = CFrame.new(Cam.CFrame.Position, Cam.CFrame.Position + lookVector)
+    Cam.CFrame = Cam.CFrame:Lerp(newCFrame, _G.AimbotSmoothness)
+end
+
+local function getClosestPlayerInFOV()
+    local nearest = nil
+    local last = math.huge
+    local playerMousePos = Cam.ViewportSize / 2
+    local localPlayer = Players.LocalPlayer
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= localPlayer and (not _G.TeamCheck or player.Team ~= localPlayer.Team) and isSafe() and player.Character and player.Character:FindFirstChild(_G.AimbotTarget) then
+            local part = player.Character[_G.AimbotTarget]
+            local ePos, isVisible = Cam:WorldToViewportPoint(part.Position)
+            local distance = (Vector2.new(ePos.X, ePos.Y) - playerMousePos).Magnitude
+
+            if distance < last and isVisible and distance < _G.FOVSize and distance < _G.MaxDistance and isVisible(part) then
+                last = distance
+                nearest = player
+            end
+        end
+    end
+
+    return nearest and nearest.Character and nearest.Character:FindFirstChild(_G.AimbotTarget)
+end
+
 local function aimbotLoop()
     spawn(function()
         while _G.AimbotEnabled and wait(0.1) do
             if not isSafe() then break end
-            local target = nil
-            local minDistance = _G.FOVSize
-            local camera = workspace.CurrentCamera
-            local mouse = game.Players.LocalPlayer:GetMouse()
-
-            for _, player in pairs(getPlayers()) do
-                if player ~= game.Players.LocalPlayer and not isTeamMate(player) and player.Character and player.Character:FindFirstChild(_G.AimbotTarget) and isVisible(player.Character[_G.AimbotTarget]) then
-                    local screenPoint = camera:WorldToScreenPoint(player.Character[_G.AimbotTarget].Position)
-                    local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPoint.X, screenPoint.Y)).Magnitude
-                    if distance < minDistance then
-                        minDistance = distance
-                        target = player.Character[_G.AimbotTarget]
-                    end
-                end
-            end
-
+            local target = getClosestPlayerInFOV()
             if target then
-                local targetPos = camera:WorldToScreenPoint(target.Position)
-                local deltaX = (targetPos.X - mouse.X) * _G.AimbotSmoothness
-                local deltaY = (targetPos.Y - mouse.Y) * _G.AimbotSmoothness
-                if math.abs(deltaX) > 1 or math.abs(deltaY) > 1 then
-                    game:GetService("VirtualInputManager"):SendMouseMoveEvent(mouse.X + deltaX, mouse.Y + deltaY, game)
-                end
+                lookAt(target.Position)
             end
         end
     end)
@@ -149,26 +176,27 @@ window:AddButton("Ativar/Desativar Aimbot", function()
 end)
 
 window:AddToggle("Team Check", function(state)
-    _G.TeamCheckEnabled = state
+    _G.TeamCheck = state
     if _G.ESPEnabled then updateESP() end
-    window:AddNotification("Team Check", _G.TeamCheckEnabled and "Ativado" or "Desativado", 2, {Title = _G.TeamCheckEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)})
+    window:AddNotification("Team Check", _G.TeamCheck and "Ativado" or "Desativado", 2, {Title = _G.TeamCheck and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)})
 end)
 
 window:AddToggle("Wall Check", function(state)
-    _G.WallCheckEnabled = state
+    _G.WallCheck = state
     if _G.ESPEnabled then updateESP() end
-    window:AddNotification("Wall Check", _G.WallCheckEnabled and "Ativado" or "Desativado", 2, {Title = _G.WallCheckEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)})
+    window:AddNotification("Wall Check", _G.WallCheck and "Ativado" or "Desativado", 2, {Title = _G.WallCheck and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)})
 end)
 
-window:AddSlider("FOV", 50, 200, 100, function(value)
+window:AddSlider("FOV", 50, 200, 90, function(value)
     _G.FOVSize = value
-    window:AddNotification("FOV", "Definido para " .. value .. " studs", 2, {Title = Color3.fromRGB(0, 150, 255)})
+    updateDrawings()
+    window:AddNotification("FOV", "Definido para " .. value, 2, {Title = Color3.fromRGB(0, 150, 255)})
 end)
 
-window:AddSlider("Max ESP Distance", 500, 2000, 1000, function(value)
-    _G.MaxESPDistance = value
+window:AddSlider("Max Distance", 500, 1000, 700, function(value)
+    _G.MaxDistance = value
     if _G.ESPEnabled then updateESP() end
-    window:AddNotification("Max ESP Distance", "Definido para " .. value .. " studs", 2, {Title = Color3.fromRGB(0, 150, 255)})
+    window:AddNotification("Max Distance", "Definido para " .. value .. " studs", 2, {Title = Color3.fromRGB(0, 150, 255)})
 end)
 
 window:AddSlider("Aimbot Smoothness", 0.05, 0.5, 0.1, function(value)
@@ -176,12 +204,18 @@ window:AddSlider("Aimbot Smoothness", 0.05, 0.5, 0.1, function(value)
     window:AddNotification("Aimbot Smoothness", "Definido para " .. value, 2, {Title = Color3.fromRGB(0, 150, 255)})
 end)
 
-local function updateLoop()
-    RunService.RenderStepped:Connect(function()
-        if _G.ESPEnabled then updateESP() end
-    end)
-end
-updateLoop()
+-- Loop de atualização
+RunService.RenderStepped:Connect(function()
+    updateDrawings()
+    if _G.AimbotEnabled then
+        local target = getClosestPlayerInFOV()
+        if target then
+            lookAt(target.Position)
+        end
+    end
+    if _G.ESPEnabled then
+        updateESP()
+    end
+end)
 
 print("Janela criada!")
-
